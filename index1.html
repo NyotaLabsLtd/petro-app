@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PETRO - Pay for Fuel Securely</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f5f5f5; height: 100vh; overflow: hidden; }
+        
+        /* AUTH SCREEN */
+        .auth-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; padding: 20px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); overflow-y: auto; }
+        .auth-logo { font-size: 42px; font-weight: 800; color: white; margin-bottom: 10px; letter-spacing: 2px; }
+        .auth-logo span { color: #f39c12; }
+        .auth-tagline { color: rgba(255,255,255,0.8); margin-bottom: 30px; text-align: center; font-size: 14px; }
+        .auth-card { background: white; border-radius: 20px; padding: 30px 25px; width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        
+        .form-group { margin-bottom: 15px; position: relative; }
+        .form-label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 600; color: #333; }
+        .required::after { content: " *"; color: #e74c3c; }
+        .optional { color: #888; font-weight: 400; font-size: 12px; }
+        .form-input { width: 100%; padding: 14px; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 15px; transition: 0.3s; }
+        .form-input:focus { outline: none; border-color: #2a5298; }
+        .form-select { width: 100%; padding: 14px; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 15px; background: white; }
+        
+        /* PHOTO UPLOAD */
+        .photo-upload-box { width: 100%; height: 80px; border: 2px dashed #ccc; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; background: #f9f9f9; position: relative; }
+        .photo-upload-box.has-image { border-style: solid; border-color: #2a5298; }
+        .photo-upload-box input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .photo-upload-text { color: #888; font-size: 13px; pointer-events: none; }
+        .photo-preview { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .photo-upload-box.has-image .photo-preview { display: block; }
+        .photo-upload-box.has-image .photo-upload-text { display: none; }
+        
+        .upload-spinner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; color: #2a5298; font-weight: bold; }
+
+        /* TERMS CHECKBOX */
+        .terms-check { display: flex; align-items: flex-start; gap: 10px; margin: 15px 0; font-size: 13px; color: #555; }
+        .terms-check input { margin-top: 3px; }
+        .terms-link { color: #2a5298; text-decoration: underline; cursor: pointer; font-weight: 600; }
+
+        .btn-primary { width: 100%; padding: 15px; background: #f39c12; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .btn-primary:disabled { background: #ccc; }
+        .auth-toggle { text-align: center; margin-top: 20px; color: #2a5298; font-weight: 600; cursor: pointer; font-size: 14px; }
+        .error-msg { color: #e74c3c; font-size: 13px; text-align: center; margin-bottom: 10px; display: none; }
+
+        /* DASHBOARD */
+        .dashboard { display: none; flex-direction: column; height: 100vh; }
+        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 20px 20px; text-align: center; flex-shrink: 0; }
+        .header h1 { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+        .header p { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+        
+        .content { flex: 1; overflow-y: auto; padding: 20px; background: #f5f5f5; }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .card-title { font-size: 18px; font-weight: 700; color: #1e3c72; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+
+        /* PROFILE */
+        .profile-header { text-align: center; margin-bottom: 20px; }
+        .profile-avatar-lg { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #2a5298; object-fit: cover; background: #eee; margin: 0 auto 10px; display: block; }
+        
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+        .info-label { color: #888; font-size: 14px; }
+        .info-value { color: #1e3c72; font-weight: 600; font-size: 14px; text-align: right; }
+
+        /* POINTS */
+        .points-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .point-box { background: #f8f9fa; padding: 15px 10px; border-radius: 12px; text-align: center; }
+        .point-num { font-size: 24px; font-weight: 800; color: #2a5298; }
+        .point-lbl { font-size: 10px; color: #888; text-transform: uppercase; margin-top: 5px; font-weight: 600; }
+
+        .referral-box { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border-radius: 12px; padding: 20px; color: white; text-align: center; }
+        .referral-link { font-size: 13px; font-weight: 600; margin: 10px 0; background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; word-break: break-all; line-height: 1.4; }
+        .share-btn { background: white; color: #f39c12; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
+        .points-info { font-size: 12px; margin-top: 10px; opacity: 0.9; }
+
+        /* NAV */
+        .nav-bar { background: white; border-top: 1px solid #eee; display: flex; padding: 10px 0; flex-shrink: 0; }
+        .nav-item { flex: 1; text-align: center; color: #999; cursor: pointer; position: relative; }
+        .nav-item.active { color: #2a5298; }
+        .nav-item.active::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 30px; height: 3px; background: #f39c12; border-radius: 2px; }
+        .nav-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        .nav-text { font-size: 11px; font-weight: 600; }
+
+        /* PAY */
+        .pay-input { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 12px; font-size: 16px; margin-bottom: 15px; }
+        .pay-btn { width: 100%; padding: 16px; background: #f39c12; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; }
+        .pay-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .station-badge { background: #e8f5e9; color: #2e7d32; padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 15px; display: none; font-weight: 600; }
+
+        /* TOAST & MODAL */
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: white; padding: 12px 24px; border-radius: 25px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 999; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: white; padding: 30px; border-radius: 16px; max-width: 500px; max-height: 85vh; overflow-y: auto; position: relative; width: 95%; }
+        .modal-close { position: absolute; top: 15px; right: 15px; font-size: 28px; cursor: pointer; color: #888; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.3s; }
+        .modal-close:hover { background: #f0f0f0; color: #333; }
+        .modal h2 { margin-bottom: 15px; color: #1e3c72; font-size: 22px; }
+        .modal h3 { margin: 20px 0 10px; color: #2a5298; font-size: 16px; }
+        .modal p { margin-bottom: 12px; color: #555; line-height: 1.6; font-size: 14px; text-align: justify; }
+        .modal ul { margin: 10px 0 10px 20px; color: #555; }
+        .modal li { margin-bottom: 8px; line-height: 1.5; font-size: 14px; }
+        .modal .last-updated { font-size: 12px; color: #888; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+        .modal .contact-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .modal .contact-info strong { color: #1e3c72; }
+    </style>
+</head>
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-logo">PETRO<span>.</span></div>
+        <div class="auth-tagline">Track • Budget • Pay for Fuel Securely</div>
+        
+        <div class="auth-card">
+            <!-- LOGIN -->
+            <div id="loginForm">
+                <div class="form-group">
+                    <label class="form-label required">Phone Number</label>
+                    <input type="tel" id="loginPhone" class="form-input" placeholder="07..." />
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">PIN</label>
+                    <input type="password" id="loginPin" class="form-input" placeholder="••••" maxlength="4" />
+                </div>
+                <div id="loginError" class="error-msg"></div>
+                <button onclick="attemptLogin()" class="btn-primary">Sign In</button>
+                <div class="auth-toggle" onclick="toggleAuthMode()">New user? Create an account</div>
+            </div>
+
+            <!-- REGISTER -->
+            <div id="registerForm" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label required">Full Name</label>
+                    <input type="text" id="regName" class="form-input" placeholder="John Doe" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">Phone Number</label>
+                    <input type="tel" id="regPhone" class="form-input" placeholder="07..." />
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">Create PIN</label>
+                    <input type="password" id="regPin" class="form-input" placeholder="4 digits" maxlength="4" />
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Profile Photo <span class="optional">(Optional)</span></label>
+                    <div class="photo-upload-box" id="photoBox">
+                        <input type="file" id="regPhoto" accept="image/*" onchange="previewImage(this)" />
+                        <span class="photo-upload-text">📷 Tap to add photo</span>
+                        <img id="photoPreviewImg" class="photo-preview" />
+                        <div class="upload-spinner" id="uploadSpinner">Uploading...</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Vehicle Plate <span class="optional">(Optional)</span></label>
+                    <input type="text" id="regVehicle" class="form-input" placeholder="KCA 123B" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Vehicle Type <span class="optional">(Optional)</span></label>
+                    <select id="regVehicleType" class="form-select">
+                        <option value="">Select vehicle type</option>
+                        <option value="Sedan">Sedan</option>
+                        <option value="SUV">SUV</option>
+                        <option value="Truck">Truck</option>
+                        <option value="Van">Van</option>
+                        <option value="Motorcycle">Motorcycle</option>
+                    </select>
+                </div>
+                
+                <!-- TERMS CHECKBOX -->
+                <div class="terms-check">
+                    <input type="checkbox" id="regTerms" />
+                    <label for="regTerms">I agree to the <span class="terms-link" onclick="openModal('termsModal')">Terms of Service</span> and <span class="terms-link" onclick="openModal('privacyModal')">Privacy Policy</span> <span class="required" style="color:#e74c3c">*</span></label>
+                </div>
+
+                <div id="regError" class="error-msg"></div>
+                <button onclick="attemptRegister()" class="btn-primary">Create Account</button>
+                <div class="auth-toggle" onclick="toggleAuthMode()">Already have an account? Sign In</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="dashboard">
+        <div class="header">
+            <h1>PETRO<span>.</span></h1>
+            <p>Track • Budget • Pay for Fuel Securely</p>
+        </div>
+        
+        <div class="content">
+            <!-- PAY -->
+            <div id="paySection" class="section active">
+                <div class="card">
+                    <div class="card-title"> Quick Payment</div>
+                    <input type="text" id="tillInput" class="pay-input" placeholder="Enter Station Till Number" oninput="validateTill()" />
+                    <div id="stationBadge" class="station-badge"></div>
+                    <input type="number" id="amountInput" class="pay-input" placeholder="Amount (KES)" oninput="checkPayBtn()" />
+                    <button id="payBtn" onclick="initiatePayment()" class="pay-btn" disabled>Pay Now</button>
+                </div>
+            </div>
+
+            <!-- HISTORY -->
+            <div id="historySection" class="section">
+                <div class="card" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white;">
+                    <div style="font-size: 14px; opacity: 0.8;">My Spending (Today)</div>
+                    <div style="font-size: 32px; font-weight: 800; margin: 10px 0;" id="spendingTotal">KES 0</div>
+                    <div style="font-size: 12px; opacity: 0.7;" id="spendingCount">0 transactions</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">History</div>
+                    <div id="historyList"><div style="text-align:center; color:#999; padding:20px;">No transactions yet.</div></div>
+                </div>
+            </div>
+
+            <!-- PROFILE -->
+            <div id="profileSection" class="section">
+                <div class="card">
+                    <div class="card-title">My Profile</div>
+                    <div class="profile-header">
+                        <img id="dashProfilePic" src="" class="profile-avatar-lg" alt="Profile" style="display:none;" />
+                        <div id="dashProfilePlaceholder" class="profile-avatar-lg" style="display:flex; align-items:center; justify-content:center; font-size:40px; color:#ccc;"></div>
+                    </div>
+                    <div class="info-row"><span class="info-label">Name</span><span class="info-value" id="dispName">-</span></div>
+                    <div class="info-row"><span class="info-label">Phone</span><span class="info-value" id="dispPhone">-</span></div>
+                    <div class="info-row"><span class="info-label">Vehicle Plate</span><span class="info-value" id="dispVehicle">Not set</span></div>
+                    <div class="info-row"><span class="info-label">Vehicle Type</span><span class="info-value" id="dispVehicleType">Not set</span></div>
+                    <div style="margin-top:15px;"><button onclick="document.getElementById('updatePicInput').click()" style="width:100%; padding:10px; background:#f0f0f0; border:none; border-radius:8px; color:#2a5298; font-weight:600; cursor:pointer;">📷 Change Profile Photo</button><input type="file" id="updatePicInput" accept="image/*" style="display:none;" onchange="updateProfilePic(this)" /></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">My Points & Referrals</div>
+                    <div class="points-grid">
+                        <div class="point-box"><div class="point-num" id="ptTotal">0</div><div class="point-lbl">Total</div></div>
+                        <div class="point-box"><div class="point-num" id="ptWelcome">50</div><div class="point-lbl">Welcome</div></div>
+                        <div class="point-box"><div class="point-num" id="ptReferral">0</div><div class="point-lbl">From Friends</div></div>
+                    </div>
+                    <div class="referral-box">
+                        <div style="font-size:13px; opacity:0.95; margin-bottom:8px;">Your Unique Referral Link</div>
+                        <div class="referral-link" id="dispRefLink">Generating...</div>
+                        <button class="share-btn" onclick="shareReferral()">📤 Share & Earn 100 Points</button>
+                        <div class="points-info">💡 Earn 100 points for each friend who joins!</div>
+                    </div>
+                </div>
+                
+                <button onclick="logout()" style="width:100%; padding:15px; background:#e74c3c; color:white; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">Logout</button>
+            </div>
+        </div>
+
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="switchTab('pay', this)"><span class="nav-icon">⛽</span><span class="nav-text">Pay</span></div>
+            <div class="nav-item" onclick="switchTab('history', this)"><span class="nav-icon">📊</span><span class="nav-text">History</span></div>
+            <div class="nav-item" onclick="switchTab('profile', this)"><span class="nav-icon">👤</span><span class="nav-text">Profile</span></div>
+        </div>
+    </div>
+
+    <!-- TERMS MODAL -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('termsModal')">&times;</span>
+            <h2>Terms and Conditions</h2>
+            <p class="last-updated">Last Updated: May 20, 2026</p>
+            <h3>1. Agreement to Terms</h3>
+            <p>By accessing or using PETRO ("the App"), you agree to be bound by these Terms and Conditions.</p>
+            <h3>2. Description of Service</h3>
+            <p>PETRO is a mobile payment platform that allows users to pay for fuel at participating petrol stations using M-Pesa.</p>
+            <h3>3. User Accounts</h3>
+            <p>You must be at least 18 years old and provide accurate information. You are responsible for maintaining account security.</p>
+            <h3>4. Payment Terms</h3>
+            <p>All payments processed through M-Pesa are final. PETRO is not responsible for network failures.</p>
+            <h3>5. Rewards Program</h3>
+            <p>Users earn 50 points on signup and 100 points per successful referral. Points can be redeemed at partner stations.</p>
+            <div class="contact-info">
+                <p><strong>Contact:</strong> support@petro.co.ke | +254 700 000 000</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRIVACY POLICY MODAL -->
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('privacyModal')">&times;</span>
+            <h2>Privacy Policy</h2>
+            <p class="last-updated">Last Updated: May 20, 2026</p>
+            <h3>1. Information We Collect</h3>
+            <p>We collect your name, phone number, vehicle details, and transaction history to provide our services.</p>
+            <h3>2. How We Use Your Data</h3>
+            <p>Your data is used to process payments, manage your account, prevent fraud, and improve our services.</p>
+            <h3>3. Data Security</h3>
+            <p>We use industry-standard encryption (bcrypt for PINs, HTTPS for transmission) to protect your information.</p>
+            <h3>4. Your Rights</h3>
+            <p>You have the right to access, correct, or delete your personal data. Contact privacy@petro.co.ke</p>
+            <div class="contact-info">
+                <p><strong>Data Protection:</strong> privacy@petro.co.ke</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const API = 'http://localhost:5000';
+        let currentUser = null;
+        let history = [];
+        let regPhotoData = null;
+        let referrerIdFromUrl = null;
+
+        // 1. AUTH LOGIC
+        function toggleAuthMode() {
+            const login = document.getElementById('loginForm');
+            const reg = document.getElementById('registerForm');
+            if (login.style.display === 'none') { 
+                login.style.display = 'block'; 
+                reg.style.display = 'none'; 
+            } else { 
+                login.style.display = 'none'; 
+                reg.style.display = 'block'; 
+            }
+        }
+
+        async function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Photo is too large! Max 2MB allowed.');
+                    input.value = '';
+                    return;
+                }
+
+                document.getElementById('uploadSpinner').style.display = 'flex';
+                document.getElementById('photoBox').classList.add('has-image');
+                document.getElementById('photoPreviewImg').src = URL.createObjectURL(file);
+
+                try {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = async function() {
+                        const base64 = reader.result;
+                        
+                        const response = await fetch(`${API}/api/upload/upload-image`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: base64 })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            regPhotoData = data.url;
+                            document.getElementById('uploadSpinner').style.display = 'none';
+                            console.log('Image uploaded:', data.url);
+                        } else {
+                            throw new Error(data.error);
+                        }
+                    };
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    document.getElementById('uploadSpinner').style.display = 'none';
+                    document.getElementById('photoBox').classList.remove('has-image');
+                    alert('Failed to upload photo. Please try again.');
+                    input.value = '';
+                }
+            }
+        }
+
+        async function attemptRegister() {
+            if (!document.getElementById('regTerms').checked) {
+                showError('regError', 'You must agree to the Terms & Privacy Policy');
+                return;
+            }
+
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const pin = document.getElementById('regPin').value.trim();
+            const vehicle = document.getElementById('regVehicle').value.trim();
+            const vehicleType = document.getElementById('regVehicleType').value;
+
+            if (!name || !phone || !pin) { 
+                showError('regError', 'Please fill all required fields (marked with *)'); 
+                return; 
+            }
+
+            showToast('Creating account...');
+
+            try {
+                const res = await fetch(`${API}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name, 
+                        phone, 
+                        pin, 
+                        vehicle, 
+                        vehicleType, 
+                        profilePic: regPhotoData,
+                        referredBy: referrerIdFromUrl
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ Account Created! Please Login.');
+                    toggleAuthMode();
+                    document.getElementById('loginPhone').value = phone;
+                    referrerIdFromUrl = null;
+                    regPhotoData = null;
+                } else { 
+                    showError('regError', data.error || 'Registration failed'); 
+                }
+            } catch (e) { 
+                showError('regError', 'Backend connection error'); 
+            }
+        }
+
+        async function attemptLogin() {
+            const phone = document.getElementById('loginPhone').value.trim();
+            const pin = document.getElementById('loginPin').value.trim();
+            try {
+                const res = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ phone, pin })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    currentUser = data.user;
+                    currentUser.token = data.token;
+                    localStorage.setItem('petro_user', JSON.stringify(currentUser));
+                    localStorage.setItem('petro_token', data.token);
+                    
+                    // ✅ Fetch fresh profile data after login
+                    await fetchProfileAfterLogin();
+                    
+                    loadDashboard();
+                } else { 
+                    showError('loginError', data.error || 'Login failed'); 
+                }
+            } catch (e) { 
+                showError('loginError', 'Backend connection error'); 
+            }
+        }
+
+        // ✅ NEW: Fetch fresh profile after login
+        async function fetchProfileAfterLogin() {
+            try {
+                const res = await fetch(`${API}/api/auth/profile`, {
+                    headers: { 'Authorization': `Bearer ${currentUser.token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUser = data.user;
+                    currentUser.token = localStorage.getItem('petro_token');
+                    localStorage.setItem('petro_user', JSON.stringify(currentUser));
+                    console.log('✅ Fresh profile fetched:', currentUser.profile_pic);
+                }
+            } catch(e) {
+                console.log('Profile fetch skipped:', e.message);
+            }
+        }
+
+        function showError(id, msg) { 
+            const el = document.getElementById(id); 
+            el.innerText = msg; 
+            el.style.display = 'block'; 
+            setTimeout(() => el.style.display = 'none', 4000); 
+        }
+        
+        function showToast(msg) { 
+            const t = document.getElementById('toast'); 
+            t.innerText = msg; 
+            t.classList.add('show'); 
+            setTimeout(() => t.classList.remove('show'), 3000); 
+        }
+        
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function(event) { 
+            if (event.target.classList.contains('modal')) { event.target.style.display = 'none'; } 
+        }
+
+        // 2. DASHBOARD LOGIC
+        function loadDashboard() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
+            renderProfile();
+            loadHistory();
+        }
+
+        // ✅ FIXED: Profile rendering with snake_case field name
+        function renderProfile() {
+            if (!currentUser) return;
+            
+            document.getElementById('dispName').innerText = currentUser.name;
+            document.getElementById('dispPhone').innerText = currentUser.phone;
+            document.getElementById('dispVehicle').innerText = currentUser.vehicle || 'Not set';
+            document.getElementById('dispVehicleType').innerText = currentUser.vehicle_type || 'Not set';
+            
+            const baseUrl = window.location.origin || 'http://localhost:3001';
+            document.getElementById('dispRefLink').innerText = `${baseUrl}/?ref=${currentUser.id}`;
+
+            const total = currentUser.points || 50;
+            document.getElementById('ptTotal').innerText = total;
+            document.getElementById('ptWelcome').innerText = 50;
+            document.getElementById('ptReferral').innerText = Math.max(0, total - 50);
+
+            // ✅ FIXED: Use snake_case profile_pic to match backend response
+            const picImg = document.getElementById('dashProfilePic');
+            const placeholder = document.getElementById('dashProfilePlaceholder');
+            
+            if (currentUser.profile_pic && currentUser.profile_pic.trim() !== '') {
+                // Force reload image by adding timestamp to bypass cache
+                picImg.src = currentUser.profile_pic + '?t=' + Date.now();
+                picImg.style.display = 'block';
+                placeholder.style.display = 'none';
+                console.log('✅ Profile pic set:', currentUser.profile_pic);
+            } else {
+                picImg.style.display = 'none';
+                placeholder.style.display = 'flex';
+                console.log('ℹ️ No profile pic available');
+            }
+        }
+
+        // ✅ FIXED: Update profile picture and save to database (using snake_case)
+        async function updateProfilePic(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async function() {
+                    try {
+                        // Step 1: Upload to Cloudinary
+                        const uploadRes = await fetch('http://localhost:5000/api/upload/upload-image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: reader.result })
+                        });
+                        const uploadData = await uploadRes.json();
+                        
+                        if (uploadData.success) {
+                            // Step 2: Save to database
+                            const token = localStorage.getItem('petro_token');
+                            const updateRes = await fetch('http://localhost:5000/api/auth/profile', {
+                                method: 'PUT',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + token
+                                },
+                                body: JSON.stringify({ profilePic: uploadData.url })
+                            });
+                            
+                            if (updateRes.ok) {
+                                // Get updated user data
+                                const userData = await updateRes.json();
+                                currentUser = userData.user;
+                                currentUser.token = token;
+                                localStorage.setItem('petro_user', JSON.stringify(currentUser));
+                                renderProfile();
+                                alert('✅ Photo saved!');
+                            } else {
+                                const err = await updateRes.json();
+                                alert('❌ Save failed: ' + err.error);
+                            }
+                        }
+                    } catch(e) { 
+                        console.error(e);
+                        alert('❌ Error: ' + e.message);
+                    }
+                }
+            }
+        }
+
+        function switchTab(tab, el) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(tab + 'Section').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // 3. PAYMENT & HISTORY
+        function validateTill() {
+            const till = document.getElementById('tillInput').value;
+            const badge = document.getElementById('stationBadge');
+            const stations = { '523410': 'Shell Westlands', '247247': 'Rubis Karen', '123456': 'Demo' };
+            if (stations[till]) { badge.style.display = 'block'; badge.innerText = `✅ ${stations[till]}`; checkPayBtn(); } 
+            else { badge.style.display = 'none'; document.getElementById('payBtn').disabled = true; }
+        }
+
+        function checkPayBtn() { document.getElementById('payBtn').disabled = !document.getElementById('amountInput').value; }
+
+        async function initiatePayment() {
+            const amt = document.getElementById('amountInput').value;
+            const till = document.getElementById('tillInput').value;
+            const station = document.getElementById('stationBadge').innerText.replace('✅ ', '');
+            showToast('📱 Sending STK Push...');
+            try {
+                const res = await fetch(`${API}/api/payments/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentUser.token}` },
+                    body: JSON.stringify({ phone: currentUser.phone, amount: amt, stationTill: till, stationName: station })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ Check your phone for PIN!');
+                    const newTx = { station, amount: amt, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() };
+                    history.unshift(newTx);
+                    localStorage.setItem('petro_history', JSON.stringify(history));
+                    renderHistory();
+                    document.getElementById('tillInput').value = ''; document.getElementById('amountInput').value = '';
+                    document.getElementById('stationBadge').style.display = 'none'; document.getElementById('payBtn').disabled = true;
+                } else { showToast('❌ Payment failed'); }
+            } catch(e) { showToast('❌ Connection error'); }
+        }
+
+        function loadHistory() { const saved = localStorage.getItem('petro_history'); if (saved) history = JSON.parse(saved); renderHistory(); }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) { list.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">No transactions yet.</div>'; document.getElementById('spendingTotal').innerText = 'KES 0'; return; }
+            let html = '', total = 0;
+            history.forEach(h => { total += parseInt(h.amount); html += `<div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #eee;"><div><div style="font-weight:600; color:#1e3c72;">${h.station}</div><div style="font-size:12px; color:#888;">${h.date} • ${h.time}</div></div><div style="font-weight:700; color:#27ae60;">KES ${h.amount}</div></div>`; });
+            list.innerHTML = html;
+            document.getElementById('spendingTotal').innerText = `KES ${total}`;
+            document.getElementById('spendingCount').innerText = `${history.length} transactions`;
+        }
+
+        function shareReferral() {
+            const userId = currentUser.id;
+            const baseUrl = window.location.origin || 'http://localhost:3001';
+            const link = `${baseUrl}/?ref=${userId}`;
+            if (navigator.share) {
+                navigator.share({ title: 'Join PETRO', text: 'Join me on PETRO!', url: link }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(link).then(() => showToast('🔗 Link copied!'));
+            }
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refId = urlParams.get('ref');
+            
+            if (refId && !isNaN(parseInt(refId))) {
+                localStorage.clear();
+                currentUser = null;
+                referrerIdFromUrl = parseInt(refId);
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('dashboard').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+                showToast('🎁 Referral link detected! Sign up to earn rewards');
+                return;
+            }
+            
+            const token = localStorage.getItem('petro_token');
+            const user = localStorage.getItem('petro_user');
+            if (token && user) {
+                currentUser = JSON.parse(user);
+                currentUser.token = token;
+                loadDashboard();
+            }
+        });
+    </script>
+</body>
+</html>
