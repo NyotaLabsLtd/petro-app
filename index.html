@@ -355,7 +355,9 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        const API = 'http://localhost:5000';
+        // ✅ UPDATED: Changed from localhost to your Render API
+        const API = 'https://petro-api-m954.onrender.com';
+        
         let currentUser = null;
         let history = [];
         let regPhotoData = null;
@@ -661,7 +663,7 @@
                 reader.readAsDataURL(file);
                 reader.onload = async function() {
                     try {
-                        const uploadRes = await fetch('http://localhost:5000/api/upload/upload-image', {
+                        const uploadRes = await fetch(`${API}/api/upload/upload-image`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ image: reader.result })
@@ -670,7 +672,7 @@
                         
                         if (uploadData.success) {
                             const token = localStorage.getItem('petro_token');
-                            const updateRes = await fetch('http://localhost:5000/api/auth/profile', {
+                            const updateRes = await fetch(`${API}/api/auth/profile`, {
                                 method: 'PUT',
                                 headers: { 
                                     'Content-Type': 'application/json',
@@ -733,7 +735,7 @@
             showToast('📱 Sending STK Push...');
 
             try {
-                const res = await fetch(`http://localhost:5000/api/payments/initiate`, {
+                const res = await fetch(`${API}/api/payments/initiate`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -771,7 +773,7 @@
 
         async function loadHistory() {
             try {
-                const res = await fetch(`http://localhost:5000/api/payments/history`, {
+                const res = await fetch(`${API}/api/payments/history`, {
                     headers: { 'Authorization': `Bearer ${currentUser.token}` }
                 });
                 const data = await res.json();
