@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const paymentRoutes = require('./routes/payment');
 const stationRoutes = require('./routes/station');
 const uploadRoutes = require('./routes/uploadRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // ✅ NEW LINE
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ app.use(limiter);
 
 // ✅ SECURITY: CORS (only allow your Netlify site + localhost for testing)
 app.use(cors({
-  origin: ['https://petro-app.netlify.app', 'http://localhost:5500', 'http://127.0.0.1:5500'],
+  origin: ['https://creative-liger-972fd0.netlify.app', 'http://localhost:5500', 'http://127.0.0.1:5500'],
   credentials: true
 }));
 
@@ -39,6 +40,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/stations', stationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/admin', adminRoutes); // ✅ NEW LINE
 
 // Health check
 app.get('/', (req, res) => {
@@ -52,7 +54,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(` PETRO API running on port ${PORT}`);
+  console.log(`🚀 PETRO API running on port ${PORT}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
   db.connect()
     .then(() => console.log('✅ Database connected'))
