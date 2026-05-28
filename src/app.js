@@ -26,11 +26,10 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ✅ SECURITY: CORS (Updated to allow your NEW Netlify URL)
+// ✅ SECURITY: CORS (Updated for petro-appp.netlify.app)
 app.use(cors({
   origin: [
-    'https://creative-liger-972fd0.netlify.app', 
-    'https://6a172ea08c1dd19247c4e7a2--petro-apppp.netlify.app', // Added new URL here
+    'https://petro-appp.netlify.app', 
     'http://localhost:5500', 
     'http://127.0.0.1:5500'
   ],
