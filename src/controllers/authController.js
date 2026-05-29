@@ -32,7 +32,7 @@ exports.register = async (req, res) => {
         const result = await pool.query(
             `INSERT INTO users (name, phone, pin, vehicle, vehicle_type, profile_pic, referral_code, referred_by, points) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-             RETURNING id, name, phone, vehicle, vehicle_type, profile_pic, referral_code, points, created_at`,
+             RETURNING id, name, phone, vehicle, vehicle_type, profile_pic, referral_code, points, is_admin, created_at`,
             [name, phone, hashedPin, vehicle || null, vehicleType || null, profilePic || null, referralCode, referredBy || null, 50]
         );
         const newUser = result.rows[0];
@@ -50,7 +50,7 @@ exports.register = async (req, res) => {
     }
 };
 
-// ✅ LOGIN - Exported properly
+// ✅ LOGIN - Exported properly (FIXED: Added is_admin to SELECT)
 exports.login = async (req, res) => {
     try {
         const { phone, pin } = req.body;
@@ -58,7 +58,7 @@ exports.login = async (req, res) => {
             return res.status(400).json({ error: 'Please provide phone and PIN' });
         }
         const result = await pool.query(
-            `SELECT id, name, phone, vehicle, vehicle_type, profile_pic, referral_code, points, pin, created_at, updated_at 
+            `SELECT id, name, phone, vehicle, vehicle_type, profile_pic, referral_code, points, pin, is_admin, created_at, updated_at 
              FROM users WHERE phone = $1`, [phone]
         );
         if (result.rows.length === 0) {
@@ -78,46 +78,9 @@ exports.login = async (req, res) => {
     }
 };
 
-// ✅ GET PROFILE - Exported properly (THIS WAS MISSING!)
+// ✅ GET PROFILE - Exported properly (Added is_admin)
 exports.getProfile = async (req, res) => {
     try {
         const userId = req.user.id;
         const result = await pool.query(
-            `SELECT id, name, phone, vehicle, vehicle_type, profile_pic, referral_code, points, created_at, updated_at 
-             FROM users WHERE id = $1`, [userId]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        res.json({ message: 'Profile retrieved successfully', user: result.rows[0] });
-    } catch (error) {
-        console.error('Get profile error:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-};
-
-// ✅ UPDATE PROFILE - Exported properly
-exports.updateProfile = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { name, vehicle, vehicleType, profilePic } = req.body;
-        const result = await pool.query(
-            `UPDATE users 
-             SET name = COALESCE($1, name), 
-                 vehicle = COALESCE($2, vehicle), 
-                 vehicle_type = COALESCE($3, vehicle_type), 
-                 profile_pic = COALESCE($4, profile_pic),
-                 updated_at = NOW()
-             WHERE id = $5
-             RETURNING id, name, phone, vehicle, vehicle_type, profile_pic, referral_code, points, created_at, updated_at`,
-            [name, vehicle, vehicleType, profilePic, userId]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        res.json({ message: 'Profile updated successfully', user: result.rows[0] });
-    } catch (error) {
-        console.error('Update profile error:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-};
+            `SELECT id
